@@ -8,19 +8,21 @@ use monotree::{Database, Hash, Hasher, Monotree};
 
 // Blake3 > Sha256 > other hash functions
 
-pub fn add_monotree_benches(c: &mut Criterion, sample_size: usize) {
+pub fn add_monotree_benches(c: &mut Criterion, sample_size: usize, tree_size: usize) {
     let mut group = c.benchmark_group("monotree");
     group.sample_size(sample_size);
 
     group.bench_function("hashmap+blake3", |b| {
-        test_tree(init_monotree_hashmap_blake3(), b)
+        test_tree(init_monotree_hashmap_blake3(), b, tree_size)
     });
 
     group.bench_function("rocksdb+blake3", |b| {
-        test_tree(init_monotree_rocksdb_blake3(), b)
+        test_tree(init_monotree_rocksdb_blake3(), b, tree_size)
     });
 
-    group.bench_function("sled+blake3", |b| test_tree(init_monotree_sled_blake3(), b));
+    group.bench_function("sled+blake3", |b| {
+        test_tree(init_monotree_sled_blake3(), b, tree_size)
+    });
 }
 
 fn fill_monotree<D: Database, H: Hasher>(tree: &mut Monotree<D, H>, nb: usize) -> Option<Hash> {
@@ -34,8 +36,8 @@ fn fill_monotree<D: Database, H: Hasher>(tree: &mut Monotree<D, H>, nb: usize) -
     root
 }
 
-fn test_tree<D: Database, H: Hasher>(mut tree: Monotree<D, H>, b: &mut Bencher) {
-    let root = fill_monotree(&mut tree, 1000);
+fn test_tree<D: Database, H: Hasher>(mut tree: Monotree<D, H>, b: &mut Bencher, tree_size: usize) {
+    let root = fill_monotree(&mut tree, tree_size);
     let key = random_hash();
     let leaf = random_hash();
     b.iter(move || {
