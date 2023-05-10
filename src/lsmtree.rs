@@ -36,7 +36,7 @@ fn test_tree<S: KVStore>(mut tree: SparseMerkleTree<S>, b: &mut Bencher, tree_si
     b.iter(move || {
         tree.update(key.as_slice(), Bytes::from(leaf.to_vec()))
             .unwrap();
-        tree.get(key.as_slice()).unwrap();
+        let _ = tree.get(key.as_slice()).unwrap();
         tree.remove(&key).unwrap();
     })
 }
