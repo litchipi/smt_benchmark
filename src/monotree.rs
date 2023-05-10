@@ -1,10 +1,10 @@
 use criterion::{Bencher, Criterion};
-use monotree::database::rocksdb::RocksDB;
-use monotree::database::sled::Sled;
-use monotree::database::MemoryDB;
-use monotree::hasher::Blake3;
 use monotree::utils::random_hash;
 use monotree::{Database, Hash, Hasher, Monotree};
+
+use crate::blake3::Blake3SmtHasher;
+use crate::memory_store::MemoryStore;
+use crate::rocksdb::SmtRockSdb;
 
 // Blake3 > Sha256 > other hash functions
 
@@ -12,16 +12,12 @@ pub fn add_monotree_benches(c: &mut Criterion, sample_size: usize, tree_size: us
     let mut group = c.benchmark_group("monotree");
     group.sample_size(sample_size);
 
-    group.bench_function("hashmap+blake3", |b| {
-        test_tree(init_monotree_hashmap_blake3(), b, tree_size)
+    group.bench_function("memstore+blake3", |b| {
+        test_tree(init_monotree_memstore_blake3(), b, tree_size)
     });
 
     group.bench_function("rocksdb+blake3", |b| {
         test_tree(init_monotree_rocksdb_blake3(), b, tree_size)
-    });
-
-    group.bench_function("sled+blake3", |b| {
-        test_tree(init_monotree_sled_blake3(), b, tree_size)
     });
 }
 
@@ -46,16 +42,12 @@ fn test_tree<D: Database, H: Hasher>(mut tree: Monotree<D, H>, b: &mut Bencher, 
     })
 }
 
-fn init_monotree_hashmap_blake3() -> Monotree<MemoryDB, Blake3> {
+fn init_monotree_memstore_blake3() -> Monotree<MemoryStore, Blake3SmtHasher> {
     Monotree::new("./.bench_db/monotree_hashmap_blake3")
 }
 
-fn init_monotree_rocksdb_blake3() -> Monotree<RocksDB, Blake3> {
+fn init_monotree_rocksdb_blake3() -> Monotree<SmtRockSdb, Blake3SmtHasher> {
     Monotree::new("./.bench_db/monotree_rocksdb_blake3")
-}
-
-fn init_monotree_sled_blake3() -> Monotree<Sled, Blake3> {
-    Monotree::new("./.bench_db/monotree_sled_blake3")
 }
 
 // TODO    Add SHA2 flavor also
