@@ -3,7 +3,7 @@ use massa_smt_bench::lsmtree::add_lsmtree_benches;
 use massa_smt_bench::monotree::add_monotree_benches;
 use massa_smt_bench::sparse_merkle_tree::add_sparse_merkle_tree_benches;
 
-const SAMPLE_SIZE: usize = 10000;
+const SAMPLE_SIZE: usize = 1000;
 const ELEMENTS_IN_TREE: usize = 10000;
 
 // TODO    cw-merkle-tree

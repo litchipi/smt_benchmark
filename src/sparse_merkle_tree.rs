@@ -45,6 +45,7 @@ where
     let leaf = random_hash();
     b.iter(move || {
         tree.update(key, leaf).unwrap();
+        tree.get(&key).unwrap();
         tree.store_mut().remove_leaf(&key).unwrap();
     })
 }
