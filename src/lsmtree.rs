@@ -15,8 +15,24 @@ pub fn add_lsmtree_benches(c: &mut Criterion, sample_size: usize, tree_size: usi
         test_tree(init_lsmtree_memstore_blake3(), b, tree_size)
     });
 
+    group.bench_function("memstore+blake3/read", |b| {
+        test_read_only(init_lsmtree_memstore_blake3(), b, tree_size)
+    });
+
+    group.bench_function("memstore+blake3/write", |b| {
+        test_write_only(init_lsmtree_memstore_blake3(), b, tree_size)
+    });
+
     group.bench_function("rocksdb+blake3", |b| {
         test_tree(init_lsmtree_rocksdb_blake3(), b, tree_size)
+    });
+
+    group.bench_function("rocksdb+blake3/read", |b| {
+        test_read_only(init_lsmtree_rocksdb_blake3(), b, tree_size)
+    });
+
+    group.bench_function("rocksdb+blake3/write", |b| {
+        test_write_only(init_lsmtree_rocksdb_blake3(), b, tree_size)
     });
 }
 
@@ -37,6 +53,26 @@ fn test_tree<S: KVStore>(mut tree: SparseMerkleTree<S>, b: &mut Bencher, tree_si
         tree.update(key.as_slice(), Bytes::from(leaf.to_vec()))
             .unwrap();
         let _ = tree.get(key.as_slice()).unwrap();
+        tree.remove(&key).unwrap();
+    })
+}
+
+fn test_read_only<S: KVStore>(mut tree: SparseMerkleTree<S>, b: &mut Bencher, tree_size: usize) {
+    let key = random_hash();
+    let leaf = random_hash();
+    fill_lsmtree(&mut tree, tree_size);
+    tree.update(key.as_slice(), Bytes::from(leaf.to_vec())).unwrap();
+    b.iter(move || {
+        let _ = tree.get(key.as_slice()).unwrap();
+    })
+}
+
+fn test_write_only<S: KVStore>(mut tree: SparseMerkleTree<S>, b: &mut Bencher, tree_size: usize) {
+    let key = random_hash();
+    let leaf = random_hash();
+    fill_lsmtree(&mut tree, tree_size);
+    b.iter(move || {
+        tree.update(key.as_slice(), Bytes::from(leaf.to_vec())).unwrap();
         tree.remove(&key).unwrap();
     })
 }

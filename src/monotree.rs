@@ -16,8 +16,24 @@ pub fn add_monotree_benches(c: &mut Criterion, sample_size: usize, tree_size: us
         test_tree(init_monotree_memstore_blake3(), b, tree_size)
     });
 
+    group.bench_function("memstore+blake3/read", |b| {
+        test_tree_read_only(init_monotree_memstore_blake3(), b, tree_size)
+    });
+
+    group.bench_function("memstore+blake3/write", |b| {
+        test_tree_write_only(init_monotree_memstore_blake3(), b, tree_size)
+    });
+
     group.bench_function("rocksdb+blake3", |b| {
         test_tree(init_monotree_rocksdb_blake3(), b, tree_size)
+    });
+
+    group.bench_function("rocksdb+blake3/read", |b| {
+        test_tree_read_only(init_monotree_rocksdb_blake3(), b, tree_size)
+    });
+
+    group.bench_function("rocksdb+blake3/write", |b| {
+        test_tree_write_only(init_monotree_rocksdb_blake3(), b, tree_size)
     });
 }
 
@@ -39,6 +55,26 @@ fn test_tree<D: Database, H: Hasher>(mut tree: Monotree<D, H>, b: &mut Bencher, 
     b.iter(move || {
         let new_root = tree.insert(root.as_ref(), &key, &leaf).unwrap();
         let _ = tree.get(new_root.as_ref(), &key).unwrap();
+        tree.remove(new_root.as_ref(), &key).unwrap();
+    })
+}
+
+fn test_tree_read_only<D: Database, H: Hasher>(mut tree: Monotree<D, H>, b: &mut Bencher, tree_size: usize) {
+    let root = fill_monotree(&mut tree, tree_size);
+    let key = random_hash();
+    let leaf = random_hash();
+    let new_root = tree.insert(root.as_ref(), &key, &leaf).unwrap();
+    b.iter(move || {
+        let _ = tree.get(new_root.as_ref(), &key).unwrap();
+    })
+}
+
+fn test_tree_write_only<D: Database, H: Hasher>(mut tree: Monotree<D, H>, b: &mut Bencher, tree_size: usize) {
+    let root = fill_monotree(&mut tree, tree_size);
+    let key = random_hash();
+    let leaf = random_hash();
+    b.iter(move || {
+        let new_root = tree.insert(root.as_ref(), &key, &leaf).unwrap();
         tree.remove(new_root.as_ref(), &key).unwrap();
     })
 }
